@@ -8,8 +8,10 @@ and transitions = fanout list;;
 type nfa = ( int * transitions * int list );;
 
 let trans_char (int, t, final) letter states =
-  let candidate_trans = List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) t)) in
-  let outputstates = List.map snd (List.filter (fun (b,q') -> b = letter) candidate_trans) in
+  let candidate_trans =
+    List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) t)) in
+  let outputstates =
+    List.map snd (List.filter (fun (b,q') -> b = letter) candidate_trans) in
   Set.normalize_set outputstates
 ;;
 
@@ -18,8 +20,10 @@ let accept aut s =
   List.exists (fun q -> List.mem q f) s
 ;;
 
-
-
+let nb_of_states nfa =
+  let (_, t, _) = nfa in
+  List.length t
+;;
 
 let print_aut (initial, transitions, acceptings) =
   print_int initial; print_string ":init\n";
@@ -35,12 +39,6 @@ let generate_nfa n =
   let rec gen_int i =
     if i >= n then []
     else i :: gen_int (i+1) in
-  let rec remove n l =
-    match l with
-    | [] -> []
-    | x::xs -> if x = n then xs
-      else if x < n then x :: remove n xs
-      else x::xs in
   let random_one_25 () =
     let i = Random.int 15 in
     if i < 5
