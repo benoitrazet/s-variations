@@ -1,6 +1,6 @@
 VERSION=0.1
 
-SOURCES=utils.ml set.ml nfa.ml variation0_npspace.ml test.ml
+SOURCES=utils.ml set.ml nfa.ml variation0_npspace.ml variation1_savitch_theorem.ml test.ml
 
 EXECUTABLES=test.out
 
@@ -13,8 +13,9 @@ test:
 	ocamlopt -c set.ml
 	ocamlopt -c nfa.ml
 	ocamlopt -c variation0_npspace.ml
+	ocamlopt -c variation1_savitch_theorem.ml
 	ocamlopt -c test.ml
-	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx test.cmx -o test.out
+	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx test.cmx -o test.out
 
 clean:
 	rm *.cmx *.cmi *.o
