@@ -1,0 +1,10 @@
+2018-03-19
+- need to cleanup the interface for nfas. Including there are too many
+details in the current implementation between list, set, etc. There
+must be a better interface for all that.
+- need to cleanup the interface enumeration of pair of states in the
+vartiation 1
+- need to have a test file that run all the benchmark with appropriate limits.
+
+2018-03-19
+- Variation 0 and Variation 1 are out
