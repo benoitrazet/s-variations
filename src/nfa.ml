@@ -20,20 +20,62 @@ let accept aut s =
   List.exists (fun q -> List.mem q f) s
 ;;
 
+let string_of_nfa (initial, transitions, acceptings) =
+  string_of_int initial ^ ": init\n" ^
+    (List.fold_left (fun acc (i, l) ->
+         acc ^ string_of_int i ^ "-> [" ^
+           (List.fold_left (fun acc (c,j) -> acc ^ String.make 1 c ^ string_of_int j ^ " ") "" l) ^
+             "]" ^ "\n") "" transitions) ^
+      List.fold_left (fun acc q -> acc ^ string_of_int q ^ " ") "" acceptings ^
+        ": accepting \n"
+;;
+
+let print_nfa aut =
+  print_string (string_of_nfa aut); flush_all ()
+;;
+
 let nb_of_states nfa =
   let (_, t, _) = nfa in
   List.length t
 ;;
 
-let print_aut (initial, transitions, acceptings) =
-  print_int initial; print_string ":init\n";
-  List.iter (fun (i, l) -> print_int i; print_string "-> [";
-    List.iter (fun (c,j) -> print_char c; print_int j; print_string " ") l;
-    print_string "]"; print_newline ()) transitions;
-  List.iter (fun q -> print_int q; print_string " ") acceptings;
-  print_newline ()
+let set_of_states aut =
+  let (i,t,f) = aut in
+  let rec help l acc =
+    match l with
+    | [] -> acc
+    | (q,tr) :: rest ->
+      let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
+      help rest acc' in
+  Set.set_adds f (help t (Set.set_add i []))
 ;;
 
+let is_empty s = List.for_all (fun (q,b) -> b = false) s
+;;
+
+let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
+;;
+
+let print_set s =
+  print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
+;;
+
+let rec next_subset s =
+  match s with
+  | [] -> None
+  | (q,b) :: xs ->
+    match next_subset xs with
+    | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
+    | Some s' -> Some ((q,b) :: s')
+;;
+
+let next (s,s') startq2 =
+  match next_subset s' with
+  | None -> (match next_subset s with
+    | None -> None
+    | Some s1 -> Some (s1, startq2) )
+  | Some s2 -> Some (s,s2)
+;;
 
 let generate_nfa n =
   let rec gen_int i =

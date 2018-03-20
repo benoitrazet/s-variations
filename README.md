@@ -1,7 +1,7 @@
 The Savitch Variations
 ======================
 
-We present variations around the theme of Savitch Theorem.
+We present variations around the theme of Savitch's Theorem.
 
 Variation 0 -- Non-deterministic Polynomial Space algorithm
 -----------------------------------------------------------
@@ -20,5 +20,15 @@ than 2^(n1+n2), which means 2^(2^(n1+n2)) steps.
 
 Variation 1 -- Savitch Theorem
 ------------------------------
+
+This is the most naive implementation applying Savitch's Theorem to
+deciding the equivalence of nfas.
+
+The complexity of this algorithm is best and worst-case in
+2^{(n1+n2)^2}. If n1 and n2 are both equal to 3, that makes 2^36
+steps.
+
+Variation 2 -- Immerman-Szelepcsényi Theorem
+--------------------------------------------
 
 Coming soon

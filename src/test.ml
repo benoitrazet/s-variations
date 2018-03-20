@@ -1,21 +1,20 @@
 open Nfa;;
 open Variation0_npspace;;
+open Variation1_savitch_theorem;;
 
 let test_equiv_nfa n =
   let rec aux i n size =
     if i >= n then ()
     else
-	let aut1 = generate_nfa size in
-	let aut2 = generate_nfa size in
-	let () = print_aut aut1 in
-	let () = print_aut aut2 in
-	match (npspace_eq aut1 aut2) with
-        | false -> print_string "NEQ \n";
-                   flush_all ();
-                   (*print_input (); *)
+	let nfa1 = generate_nfa size in
+	let nfa2 = generate_nfa size in
+	let () = print_nfa nfa1 in
+	let () = print_nfa nfa2 in
+	(*match (npspace_eq nfa1 nfa2) with*)
+        match (pspace_eq nfa1 nfa2) with
+        | false -> print_string "NEQ\n\n";
                    aux (i+1) n size
-        | true  -> print_string "EQ \n";
-                   (*print_aut aut1; print_aut aut2;*)
+        | true  -> print_string "EQ\n\n";
                    aux (i+1) n size
   in
   let nb_iteration_per_size = 100 in
