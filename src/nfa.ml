@@ -2,52 +2,54 @@ open Set;;
 
 type state = int;;
 
-type fanout =  (state * (char option * state) list)
+type fanout =  (state * (char * state) list)
 and transitions = fanout list;;
 
-type nfa = ( int * transitions * int list );;
+type nfa =
+  { initial : state ;
+    transitions : transitions ;
+    acceptings : int list
+  }
+;;
 
-let trans_char (int, t, final) letter states =
+let trans_char nfa letter states =
   let candidate_trans =
-    List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) t)) in
+    List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) nfa.transitions)) in
   let outputstates =
     List.map snd (List.filter (fun (b,q') -> b = letter) candidate_trans) in
   Set.normalize_set outputstates
 ;;
 
-let accept aut s =
-  let (_,_,f) = aut in
-  List.exists (fun q -> List.mem q f) s
+let accept nfa s =
+  List.exists (fun q -> List.mem q nfa.acceptings) s
 ;;
 
-let string_of_nfa (initial, transitions, acceptings) =
-  string_of_int initial ^ ": init\n" ^
+let string_of_nfa nfa =
+  string_of_int nfa.initial ^ ": init\n" ^
     (List.fold_left (fun acc (i, l) ->
          acc ^ string_of_int i ^ "-> [" ^
            (List.fold_left (fun acc (c,j) -> acc ^ String.make 1 c ^ string_of_int j ^ " ") "" l) ^
-             "]" ^ "\n") "" transitions) ^
-      List.fold_left (fun acc q -> acc ^ string_of_int q ^ " ") "" acceptings ^
+             "]" ^ "\n") "" nfa.transitions) ^
+      List.fold_left (fun acc q -> acc ^ string_of_int q ^ " ") "" nfa.acceptings ^
         ": accepting \n"
 ;;
 
-let print_nfa aut =
-  print_string (string_of_nfa aut); flush_all ()
+let print_nfa nfa =
+  print_string (string_of_nfa nfa); flush_all ()
 ;;
 
 let nb_of_states nfa =
-  let (_, t, _) = nfa in
-  List.length t
+  List.length nfa.transitions
 ;;
 
-let set_of_states aut =
-  let (i,t,f) = aut in
+let set_of_states nfa =
   let rec help l acc =
     match l with
     | [] -> acc
     | (q,tr) :: rest ->
       let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
       help rest acc' in
-  Set.set_adds f (help t (Set.set_add i []))
+  Set.set_adds nfa.acceptings (help nfa.transitions (Set.set_add nfa.initial []))
 ;;
 
 let is_empty s = List.for_all (fun (q,b) -> b = false) s
@@ -113,7 +115,10 @@ let generate_nfa n =
     then if Random.int 3 = 0 then q :: accepting (q+1) else accepting (q+1)
     else [] in
   let states = gen_int 0 in
-    (0, gen (List.rev states) [], accepting 0)
+  { initial = 0 ;
+    transitions = gen (List.rev states) [] ;
+    acceptings = accepting 0
+  }
   (*(*all states, non-accepting*)
-    (0, gen (List.rev states) [], [])*)
+    { initial =0; transitions = gen (List.rev states) []; acceptings = []} *)
 	
