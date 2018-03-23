@@ -47,37 +47,62 @@ let set_of_states nfa =
     match l with
     | [] -> acc
     | (q,tr) :: rest ->
-      let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
-      help rest acc' in
+       let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
+       help rest acc' in
   Set.set_adds nfa.acceptings (help nfa.transitions (Set.set_add nfa.initial []))
 ;;
 
-let is_empty s = List.for_all (fun (q,b) -> b = false) s
+let nb_of_states nfa =
+  Set.size (set_of_states nfa)
 ;;
+  
+module SubsetS = struct
+  
+  let is_empty s = List.for_all (fun (q,b) -> b = false) s
+  ;;
+  
+  let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
+  ;;
+  
+  let print_set s =
+    print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
+  ;;
 
-let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
-;;
+  let rec next_subset s =
+    match s with
+    | [] -> None
+    | (q,b) :: xs ->
+       match next_subset xs with
+       | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
+       | Some s' -> Some ((q,b) :: s')
+  ;;
+  
+  let next (s,s') startq2 =
+    match next_subset s' with
+    | None -> (match next_subset s with
+               | None -> None
+               | Some s1 -> Some (s1, startq2) )
+    | Some s2 -> Some (s,s2)
+  ;;
 
-let print_set s =
-  print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
-;;
+  let start_subset nfa =
+    List.map (fun x -> (x, false)) (set_of_states nfa)
 
-let rec next_subset s =
-  match s with
-  | [] -> None
-  | (q,b) :: xs ->
-    match next_subset xs with
-    | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
-    | Some s' -> Some ((q,b) :: s')
-;;
+  let initial_subset nfa =
+    List.map (fun x-> (x, x = nfa.initial)) (set_of_states nfa)
 
-let next (s,s') startq2 =
-  match next_subset s' with
-  | None -> (match next_subset s with
-    | None -> None
-    | Some s1 -> Some (s1, startq2) )
-  | Some s2 -> Some (s,s2)
-;;
+  let iterator_pair_subset nfa1 nfa2 =
+    let startq1 = start_subset nfa1 in
+    let startq2 = start_subset nfa2 in
+    let start_pair = (startq1, startq2) in
+    let next_pair (s,s') = next (s,s') startq2 in
+    (start_pair, next_pair)
+
+  let same_acceptance nfa1 nfa2 (s1,s2) =
+    (*let () = print_string "S"; print_set s1; print_set s2; print_newline() in*)
+    List.exists (fun (q,b) -> b && List.mem q nfa1.acceptings) s1 = List.exists (fun (q,b) -> b && List.mem q nfa2.acceptings) s2
+
+end;;
 
 let generate_nfa n =
   let rec gen_int i =

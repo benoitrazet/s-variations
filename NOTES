@@ -1,3 +1,10 @@
+2018-03-22
+- factorize code by adding the subset and pair of subset API.
+
+2018-03-21
+- nfa as a record instead of triple
+- add NOTES file
+
 2018-03-19
 - need to cleanup the interface for nfas. Including there are too many
 details in the current implementation between list, set, etc. There
