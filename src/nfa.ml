@@ -2,80 +2,107 @@ open Set;;
 
 type state = int;;
 
-type fanout =  (state * (char option * state) list)
+type fanout =  (state * (char * state) list)
 and transitions = fanout list;;
 
-type nfa = ( int * transitions * int list );;
+type nfa =
+  { initial : state ;
+    transitions : transitions ;
+    acceptings : int list
+  }
+;;
 
-let trans_char (int, t, final) letter states =
+let trans_char nfa letter states =
   let candidate_trans =
-    List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) t)) in
+    List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) nfa.transitions)) in
   let outputstates =
     List.map snd (List.filter (fun (b,q') -> b = letter) candidate_trans) in
   Set.normalize_set outputstates
 ;;
 
-let accept aut s =
-  let (_,_,f) = aut in
-  List.exists (fun q -> List.mem q f) s
+let accept nfa s =
+  List.exists (fun q -> List.mem q nfa.acceptings) s
 ;;
 
-let string_of_nfa (initial, transitions, acceptings) =
-  string_of_int initial ^ ": init\n" ^
+let string_of_nfa nfa =
+  string_of_int nfa.initial ^ ": init\n" ^
     (List.fold_left (fun acc (i, l) ->
          acc ^ string_of_int i ^ "-> [" ^
            (List.fold_left (fun acc (c,j) -> acc ^ String.make 1 c ^ string_of_int j ^ " ") "" l) ^
-             "]" ^ "\n") "" transitions) ^
-      List.fold_left (fun acc q -> acc ^ string_of_int q ^ " ") "" acceptings ^
+             "]" ^ "\n") "" nfa.transitions) ^
+      List.fold_left (fun acc q -> acc ^ string_of_int q ^ " ") "" nfa.acceptings ^
         ": accepting \n"
 ;;
 
-let print_nfa aut =
-  print_string (string_of_nfa aut); flush_all ()
+let print_nfa nfa =
+  print_string (string_of_nfa nfa); flush_all ()
 ;;
 
 let nb_of_states nfa =
-  let (_, t, _) = nfa in
-  List.length t
+  List.length nfa.transitions
 ;;
 
-let set_of_states aut =
-  let (i,t,f) = aut in
+let set_of_states nfa =
   let rec help l acc =
     match l with
     | [] -> acc
     | (q,tr) :: rest ->
-      let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
-      help rest acc' in
-  Set.set_adds f (help t (Set.set_add i []))
+       let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
+       help rest acc' in
+  Set.set_adds nfa.acceptings (help nfa.transitions (Set.set_add nfa.initial []))
 ;;
 
-let is_empty s = List.for_all (fun (q,b) -> b = false) s
+let nb_of_states nfa =
+  Set.size (set_of_states nfa)
 ;;
+  
+module SubsetS = struct
+  
+  let is_empty s = List.for_all (fun (q,b) -> b = false) s
+  ;;
+  
+  let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
+  ;;
+  
+  let print_set s =
+    print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
+  ;;
 
-let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
-;;
+  let rec next_subset s =
+    match s with
+    | [] -> None
+    | (q,b) :: xs ->
+       match next_subset xs with
+       | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
+       | Some s' -> Some ((q,b) :: s')
+  ;;
+  
+  let next (s,s') startq2 =
+    match next_subset s' with
+    | None -> (match next_subset s with
+               | None -> None
+               | Some s1 -> Some (s1, startq2) )
+    | Some s2 -> Some (s,s2)
+  ;;
 
-let print_set s =
-  print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
-;;
+  let start_subset nfa =
+    List.map (fun x -> (x, false)) (set_of_states nfa)
 
-let rec next_subset s =
-  match s with
-  | [] -> None
-  | (q,b) :: xs ->
-    match next_subset xs with
-    | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
-    | Some s' -> Some ((q,b) :: s')
-;;
+  let initial_subset nfa =
+    List.map (fun x-> (x, x = nfa.initial)) (set_of_states nfa)
 
-let next (s,s') startq2 =
-  match next_subset s' with
-  | None -> (match next_subset s with
-    | None -> None
-    | Some s1 -> Some (s1, startq2) )
-  | Some s2 -> Some (s,s2)
-;;
+  let iterator_pair_subset nfa1 nfa2 =
+    let startq1 = start_subset nfa1 in
+    let startq2 = start_subset nfa2 in
+    let start_pair = (startq1, startq2) in
+    let next_pair (s,s') = next (s,s') startq2 in
+    (start_pair, next_pair)
+
+  let same_acceptance nfa1 nfa2 (s1,s2) =
+    (*let () = print_string "S"; print_set s1; print_set s2; print_newline() in*)
+    List.exists (fun (q,b) -> b && List.mem q nfa1.acceptings) s1 = List.exists (fun (q,b) -> b && List.mem q nfa2.acceptings) s2
+
+end;;
 
 let generate_nfa n =
   let rec gen_int i =
@@ -113,7 +140,10 @@ let generate_nfa n =
     then if Random.int 3 = 0 then q :: accepting (q+1) else accepting (q+1)
     else [] in
   let states = gen_int 0 in
-    (0, gen (List.rev states) [], accepting 0)
+  { initial = 0 ;
+    transitions = gen (List.rev states) [] ;
+    acceptings = accepting 0
+  }
   (*(*all states, non-accepting*)
-    (0, gen (List.rev states) [], [])*)
+    { initial =0; transitions = gen (List.rev states) []; acceptings = []} *)
 	

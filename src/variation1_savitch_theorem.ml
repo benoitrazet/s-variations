@@ -1,42 +1,32 @@
 open Utils;;
 open Set;;
 open Nfa;;
+open SubsetS;;
 
-let pspace_eq aut1 aut2 =
-  let (i1, delta1, f1) = aut1 in
-  let (i2, delta2, f2) = aut2 in
-
-  let q1 = set_of_states aut1 in
-  let q2 = set_of_states aut2 in
-  let n1 = Set.size q1 in
-  let n2 = Set.size q2 in
+let pspace_eq nfa1 nfa2 =
+  let n1 = nb_of_states nfa1 in
+  let n2 = nb_of_states nfa2 in
   let bound = pow2 (n1+ n2) in
   (*let bound = 4 in*)
   (*let () = print_string "BOUND: "; print_int bound; print_newline () in*)
-  let startq1 = List.map (fun x -> (x,false)) q1 in
-  let startq2 = List.map (fun x -> (x,false)) q2 in
   
-  let initstate1 = List.map (fun x-> (x, x = i1)) q1 in
-  let initstate2 = List.map (fun x-> (x, x = i2)) q2 in
+  let initstate1 = initial_subset nfa1 in
+  let initstate2 = initial_subset nfa2 in
 
-  let next_pair (s,s') = next (s,s') startq2 in  
-  let start_pair = (startq1, startq2) in
+  let (start_pair, next_pair) = iterator_pair_subset nfa1 nfa2 in
   
   let yield1step (s1,s2) (s1',s2') a =
-    let s3 = trans_char aut1 a (filt s1) in
-    let s4 = trans_char aut2 a (filt s2) in
+    let s3 = trans_char nfa1 a (filt s1) in
+    let s4 = trans_char nfa2 a (filt s2) in
     (Set.set_adds s3 [], Set.set_adds s4 []) = (filt s1', filt s2') in
 
   let yield_in_one_step (s1,s2) (s1',s2') =
     yield1step (s1,s2) (s1',s2') 'a' || yield1step (s1,s2) (s1',s2') 'b' in
 
-  let same_acceptance (s1,s2) =
-    (*let () = print_string "S"; print_set s1; print_set s2; print_newline() in*)
-    List.exists (fun (q,b) -> b && List.mem q f1) s1 = List.exists (fun (q,b) -> b && List.mem q f2) s2
-     in
+  let same_acceptance (s1,s2) = same_acceptance nfa1 nfa2 (s1,s2) in
 
   (* in this context canyield means it finds a string that has not the
-     same recognition for both aut. *)
+     same recognition for both nfas. *)
   let rec canyield (s1,s2) (s1',s2') n1 n2 =
     let print_call () = if n2 - n1 > 2 then (print_set s1; print_set s2; print_set s1'; print_set s2'; print_int n1; print_string " "; print_int n2; print_newline ()) else () in
     (*let () =  print_call () in*)
@@ -64,12 +54,12 @@ let pspace_eq aut1 aut2 =
       in
       iterate start_pair in
 
-  let rec run_can_yield s_s' =
+  let rec reachable_are_accepting s_s' =
     (*let () = print_string "!"; print_set (fst s_s'); print_set (snd s_s'); print_newline() in*)
     let next_yield () =
       match next_pair s_s' with
       | None -> true
-      | Some p -> run_can_yield p in
+      | Some p -> reachable_are_accepting p in
     if same_acceptance s_s'
     then next_yield ()
     else
@@ -80,6 +70,6 @@ let pspace_eq aut1 aut2 =
   in
 
   if same_acceptance (initstate1, initstate2)
-  then run_can_yield start_pair
+  then reachable_are_accepting start_pair
   else false
 ;;
