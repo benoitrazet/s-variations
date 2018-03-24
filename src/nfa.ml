@@ -100,7 +100,16 @@ module SubsetS = struct
 
   let same_acceptance nfa1 nfa2 (s1,s2) =
     (*let () = print_string "S"; print_set s1; print_set s2; print_newline() in*)
-    List.exists (fun (q,b) -> b && List.mem q nfa1.acceptings) s1 = List.exists (fun (q,b) -> b && List.mem q nfa2.acceptings) s2
+    List.exists (fun (q,b) -> b && List.mem q nfa1.acceptings) s1 =
+    List.exists (fun (q,b) -> b && List.mem q nfa2.acceptings) s2
+
+  let yield1step nfa1 nfa2 (s1,s2) (s1',s2') a =
+    let s3 = trans_char nfa1 a (filt s1) in
+    let s4 = trans_char nfa2 a (filt s2) in
+    (Set.set_adds s3 [], Set.set_adds s4 []) = (filt s1', filt s2')
+
+  let yield_in_one_step nfa1 nfa2 (s1,s2) (s1',s2') =
+    yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'a' || yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'b'
 
 end;;
 
