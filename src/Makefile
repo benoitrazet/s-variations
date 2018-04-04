@@ -14,8 +14,9 @@ test:
 	ocamlopt -c nfa.ml
 	ocamlopt -c variation0_npspace.ml
 	ocamlopt -c variation1_savitch_theorem.ml
+	ocamlopt -c variation2_counting.ml
 	ocamlopt -c test.ml
-	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx test.cmx -o test.out
+	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx test.cmx -o test.out
 
 clean:
 	rm *.cmx *.cmi *.o

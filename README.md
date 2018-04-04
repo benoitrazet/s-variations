@@ -28,7 +28,11 @@ The complexity of this algorithm is best and worst-case in
 2^{(n1+n2)^2}. If n1 and n2 are both equal to 3, that makes 2^36
 steps.
 
-Variation 2 -- Immerman-Szelepcsényi Theorem
---------------------------------------------
+Variation 2 -- Counting and Immerman-Szelepcsényi Theorem
+---------------------------------------------------------
 
-Coming soon
+This variation demonstrates how counting can improve widely the
+complexity of deciding the equivalence of nfas in polynomial space.  I
+discovered that the same technique is used in the
+Immerman-Szelepcsényi Theorem which establishes the equivalence of
+NSPACE(S(n)) and co-NSPACE(S(n)).

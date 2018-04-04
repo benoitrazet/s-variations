@@ -3,7 +3,7 @@ open Set;;
 open Nfa;;
 open SubsetS;;
 
-let pspace_eq nfa1 nfa2 =
+let pspace_eq_counting nfa1 nfa2 =
   let n1 = nb_of_states nfa1 in
   let n2 = nb_of_states nfa2 in
   let bound = pow2 (n1 + n2) in
@@ -46,22 +46,36 @@ let pspace_eq nfa1 nfa2 =
       in
       iterate start_pair in
 
-  let rec reachable_are_accepting s_s' =
+  let rec reachable_are_accepting s_s' bound cnt_reached =
     (*let () = print_string "!"; print_set (fst s_s'); print_set (snd s_s'); print_newline() in*)
-    let next_yield () =
+    let next_yield cnt_reached =
       match next_pair s_s' with
-      | None -> true
-      | Some p -> reachable_are_accepting p in
-    if same_acceptance nfa1 nfa2 s_s'
-    then next_yield ()
-    else
-      (*let () = print_string "?"; print_set (fst s_s'); print_set (snd s_s'); print_newline() in*)
-      match canyield (initstate1, initstate2) s_s' 0 bound with
-      | `Reachable -> false
-      | `NotReachable -> next_yield ()
+      | None -> Some cnt_reached
+      | Some p -> reachable_are_accepting p bound cnt_reached in
+    
+    match canyield (initstate1, initstate2) s_s' 0 bound with
+    | `Reachable -> if same_acceptance nfa1 nfa2 s_s'
+                    then next_yield (cnt_reached+1)
+                    else None
+    | `NotReachable -> next_yield cnt_reached
   in
 
-  if same_acceptance nfa1 nfa2 (initstate1, initstate2)
-  then reachable_are_accepting start_pair
+  let rec iter_run n prev_cnt =
+    (*let () = print_int n; flush_all () in*)
+    if n > bound
+    then true
+    else
+      let res_n = reachable_are_accepting start_pair n 0 in
+      match res_n with
+      | None -> false
+      | Some cnt_reached ->
+         let () = print_int cnt_reached; print_string "-" in
+	 if cnt_reached = prev_cnt
+         then true (* fixpoint reached *)
+         else iter_run (n+1) cnt_reached
+  in
+  
+  if same_acceptance nfa1 nfa2 (initstate1,initstate2)
+  then iter_run 1 0
   else false
 ;;
