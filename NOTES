@@ -1,3 +1,13 @@
+2018-04-12
+- changed the plan a little bit. Instead of doing the
+enumeration based on accessible states, decided to do directly the
+generalization to the transitive closure.
+
+2018-04-04
+- variation2 with counting
+- testing more generic
+- update README
+
 2018-03-22
 - factorize code by adding the subset and pair of subset API.
 
