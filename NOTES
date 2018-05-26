@@ -1,3 +1,6 @@
+2018-05-26
+- add TODO markdown file
+
 2018-05-01
 - add the transitive closure that is compiling fine
 - add variation3.ml but does not compile, there is work to do on this one (pspace_eq8).
