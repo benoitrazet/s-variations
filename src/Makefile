@@ -15,8 +15,12 @@ test:
 	ocamlopt -c variation0_npspace.ml
 	ocamlopt -c variation1_savitch_theorem.ml
 	ocamlopt -c variation2_counting.ml
+	ocamlopt -c transitive_closure.ml
+	ocamlopt -c test_transitive_closure.ml
+	ocamlopt transitive_closure.cmx test_transitive_closure.cmx -o test_transitive_closure.out
+	ocamlopt -c variation3.ml
 	ocamlopt -c test.ml
-	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx test.cmx -o test.out
+	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx test.cmx -o test.out
 
 clean:
 	rm *.cmx *.cmi *.o
