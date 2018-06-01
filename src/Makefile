@@ -20,7 +20,7 @@ test:
 	ocamlopt transitive_closure.cmx test_transitive_closure.cmx -o test_transitive_closure.out
 	ocamlopt -c variation3.ml
 	ocamlopt -c test.ml
-	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx test.cmx -o test.out
+	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx test.cmx -o test.out
 
 clean:
 	rm *.cmx *.cmi *.o

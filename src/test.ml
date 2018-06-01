@@ -2,6 +2,7 @@ open Nfa;;
 open Variation0_npspace;;
 open Variation1_savitch_theorem;;
 open Variation2_counting;;
+open Variation3;;
 
 let test_equiv_nfa algo n =
   let rec aux i n size =
@@ -29,7 +30,7 @@ let test_equiv_nfa algo n =
   iterate 2
 ;;
 
-(*
-test_equiv_nfa npspace_eq 4;;
-test_equiv_nfa pspace_eq 4;;*)
-test_equiv_nfa pspace_eq_counting 7;;
+(* test_equiv_nfa npspace_eq 4;; *)
+(* test_equiv_nfa pspace_eq 4;; *)
+(* test_equiv_nfa pspace_eq_counting 5;; *)
+test_equiv_nfa pspace_eq_accessible 5;;
