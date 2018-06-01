@@ -38,13 +38,29 @@ used in the Immerman-Szelepcsényi Theorem which establishes the
 equivalence between NSPACE(S(n)) and co-NSPACE(S(n)).
 
 
-Variation 3 -- Accessibility Matrix as Transitive Closure
----------------------------------------------------------
+Variation 3 -- Smart guessing the middle configurations
+-------------------------------------------------------
 
-Coming soon
+This variation proposes to improve the running time by upgrading the
+method of enumeration of the middle configurations. In the previous
+variations, the enumeration of the middle configurations is completely
+naive and enumerates all the possible configurations (the best case is
+the worst case again). To illustrate how impractical it is, consider
+the case when there is a set of states is are not reachable from a
+starting configuration, then all the combinations of this states would
+be generated with no chance of success. In this variation we developed
+a technique to enumerate only the middle configurations that have a
+chance to be successful. The main idea is to consider the matrix
+associated with each NFAs where the element a_{i,j} is an interval
+[m,n] indicating that it is possible to go from state i to state j
+with a string of length least m and at most n.
+
+The smart enumeration remains in the polynomial space complexity and
+therefore the whole algorithm remains in DSPACE(n^2).
+
 
 
 Variation 4 -- Dynamic Programming
 ----------------------------------
 
-Coming eventually
+Coming Soon
