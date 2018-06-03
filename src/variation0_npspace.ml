@@ -11,7 +11,7 @@ let npspace_eq nfa1 nfa2 =
   let n1 = nb_of_states nfa1 in
   let n2 = nb_of_states nfa2 in
   let max_steps = pow2 (n1 + n2) in
-  let () = print_string "length = "; print_int max_steps; print_newline () in
+  (*let () = print_string "length = "; print_int max_steps; print_newline () in*)
   let rec loop i s1 s2 =
     if i > max_steps
     then true

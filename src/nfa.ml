@@ -57,7 +57,7 @@ let nb_of_states nfa =
 ;;
   
 module SubsetS = struct
-  
+
   let is_empty s = List.for_all (fun (q,b) -> b = false) s
   ;;
   
@@ -106,10 +106,12 @@ module SubsetS = struct
   let yield1step nfa1 nfa2 (s1,s2) (s1',s2') a =
     let s3 = trans_char nfa1 a (filt s1) in
     let s4 = trans_char nfa2 a (filt s2) in
-    (Set.set_adds s3 [], Set.set_adds s4 []) = (filt s1', filt s2')
+    (Set.set_adds s3 [], Set.set_adds s4 []) =
+      (Set.normalize_set (filt s1'), Set.normalize_set (filt s2'))
 
   let yield_in_one_step nfa1 nfa2 (s1,s2) (s1',s2') =
-    yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'a' || yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'b'
+    yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'a' ||
+      yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'b'
 
 end;;
 
@@ -117,17 +119,17 @@ let generate_nfa n =
   let rec gen_int i =
     if i >= n then []
     else i :: gen_int (i+1) in
-  let random_one_25 () =
+  let random_fanout () =
     let i = Random.int 15 in
     if i < 5
     then 0
     else if i < 10
-    then 1
+    then int_of_float (float_of_int 1 /. 3. *. float_of_int n)
     else if i < 12
-    then 2
+    then int_of_float (float_of_int 2 /. 3. *. float_of_int n)
     else if i < 13
-    then 3
-    else 4 in
+    then int_of_float (float_of_int 3 /. 3. *. float_of_int n)
+    else int_of_float (float_of_int 4 /. 3. *. float_of_int n) in
   let rec gen_trans fanout c =
     if fanout = 0
     then []
@@ -136,8 +138,8 @@ let generate_nfa n =
     match to_explore with
     | [] -> trans
     | q :: qs ->
-      let fanout1 = random_one_25 () in
-      let fanout2 = random_one_25 () in
+      let fanout1 = random_fanout () in
+      let fanout2 = random_fanout () in
       let trans_a = gen_trans fanout1 'a' in
       let trans_b = gen_trans fanout2 'b' in
       let transab = trans_a@trans_b in
