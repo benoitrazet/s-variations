@@ -18,6 +18,7 @@ open Transitive_closure;;
    problems.
 *)
 
+(* allstates is a constant parameter *)
 let rec smart_enum_subset (tab:(int * (int * Interval.interval) list * Interval.interval) list) global_itv (allstates: int list) =
   sat_enum_subset tab global_itv [] [] allstates []
 
@@ -62,15 +63,12 @@ and sat_enum_subset (tab:(int * (int * Interval.interval) list * Interval.interv
     (match List.length ((fun (x,y,z) -> y) (List.hd orderedtab)) with
     | 0 -> let (new_tab, new_global_itv) = clean_tab_and_update_global_itv orderedtab in
 	   sat_enum_subset new_tab new_global_itv selected notselected allstates choices
-    (*backtrack choices*)
-    | _ -> (*let score_states = List.map (fun q -> (q, List.length
-      (List.filter (fun (_,lst,_) -> List.mem q lst) (List.tl orderedtab) ))) lst in
-	     let order_lst = List.map fst (List.sort (fun (q,score) (q',score') -> score - score') score_states) in*)
-	   let (state_selected, _itv) = List.hd lst in
-	   let (tab_selected,global_itv_selected) = filter_selected_tab state_selected in
-	   let (tab_notselected, global_itv_notselected) = filter_notselected_tab state_selected in
-	   let newchoices = (tab_notselected, global_itv_notselected, selected, state_selected :: notselected,allstates):: choices in
-	   sat_enum_subset tab_selected global_itv_selected (state_selected :: selected) notselected allstates newchoices)
+    | _ ->
+      let (state_selected, _itv) = List.hd lst in
+      let (tab_selected, global_itv_selected) = filter_selected_tab state_selected in
+      let (tab_notselected, global_itv_notselected) = filter_notselected_tab state_selected in
+      let newchoices = (tab_notselected, global_itv_notselected, selected, state_selected :: notselected,allstates):: choices in
+       sat_enum_subset tab_selected global_itv_selected (state_selected :: selected) notselected allstates newchoices)
 and backtrack choices =
   match choices with
   | [] -> `Empty
@@ -86,8 +84,11 @@ and finalize itv selected notselected allstates choices =
 and finalize2 itv vector_of_selected enum_may_be_selected choices =
   match enum_may_be_selected with
   | None -> backtrack choices
-  | Some may_be_selected -> `Elm ((vector_of_selected@may_be_selected,itv), fun () ->
-    finalize2 itv vector_of_selected (next_subset may_be_selected) choices)
+  | Some may_be_selected ->
+    `Elm (
+      (vector_of_selected@may_be_selected,itv),
+      fun () ->
+        finalize2 itv vector_of_selected (next_subset may_be_selected) choices)
 ;;
 
 (* Enumerate the product of two enumerations as the enumeration of the
@@ -172,25 +173,13 @@ let enum_sat aut1 aut2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
   let f_s1' = filt s1' in
   let f_s2' = filt s2' in
 
-  let q1 = set_of_states aut1 in
-  let q2 = set_of_states aut2 in
-
-  (*let (_, next_partial, accessible, accessible_exact) = enum_states_aut aut1 aut2 in*)
-
   let (subset1,subset2) =
     match interval1 with
-    (*| Interval.Between (Interval.Val n, Interval.Val m) ->
-      if n = m
-      then (accessible_exact aut1 f_s1 n, accessible_exact aut2 f_s2 n)
-      else (accessible_between mat1 f_s1 interval1, accessible_between mat2 f_s2 interval1)*)
     | _ ->
       let subset1 = accessible_between mat1 f_s1 interval1 in
       let subset2 = accessible_between mat2 f_s2 interval1 in
       (subset1,subset2) in
 
-
-  (*let subset1_reachable = List.map (fun q -> (q, accessible_between aut1 [q] interval2)) subset1 in*)
-  (*let subset2_reachable = List.map (fun q -> (q, accessible_between aut2 [q] interval2)) subset2 in*)
   (* For each states in s1', associate the states in subset1 that can yield to s1' *)
   let s1'_reachable_from = List.map (fun q' -> (q',
     List.fold_left (fun tr q ->
@@ -239,20 +228,6 @@ let enum_sat aut1 aut2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
 	       `Elm (((s_mid1,s_mid2),t_prev,t_post), (fun () -> enum_interval (next())))
     ) in
 
-  (*let q1 = set_of_states aut1 in
-  let q2 = set_of_states aut2 in
-
-  let startq1 =  (List.map (fun x -> (x,false)) q1) in
-  let startq2 =  (List.map (fun x -> (x,false)) q2) in
-  let next (s,s') = next (s,s') startq2 in
-  let start = (startq1, startq2) in
-  let rec create_flux (s,s') =
-    `Elm ((s,s'),
-	  fun () -> match next_partial (s,s') subset1 subset2 with
-                    | None -> `Empty
-	            | Some new_s_s' -> create_flux new_s_s') in
-  let flux_no_interval () =  create_flux start in*)
-
   let add_if_not_in_enum f =
     let rec aux f b =
       match f with
@@ -267,7 +242,6 @@ let enum_sat aut1 aut2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
       aux f false
     else f in
 
-(*enum_interval (flux_no_interval ())*)
   enum_interval (add_if_not_in_enum enum_1_2)
 ;;
 
@@ -275,12 +249,6 @@ let enum_sat aut1 aut2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
 (* based on variation2 and doing an enumeration of the subsets using
    the accessible states at a given depth. *)
 let pspace_eq_accessible nfa1 nfa2 =
-  let n1 = nb_of_states nfa1 in
-  let n2 = nb_of_states nfa2 in
-  let bound = pow2 (n1 + n2) in
-  (*let bound = 4 in*)
-  (*let () = print_string "BOUND: "; print_int bound; print_newline () in*)
-
   let initstate1 = initial_subset nfa1 in
   let initstate2 = initial_subset nfa2 in
 
@@ -297,11 +265,16 @@ let pspace_eq_accessible nfa1 nfa2 =
     (*let () =  print_call () in*)
 
     match m,n with
-    | 0,0 -> if eq_pair_subset (s1,s2) (s1',s2') then `Reachable else `NotReachable
-    | 0,_ -> if eq_pair_subset (s1,s2) (s1',s2') then `Reachable else canyield (s1,s2) (s1',s2') (1, n)
+    | 0,0 -> if eq_pair_subset (s1,s2) (s1',s2')
+             then `Reachable
+             else `NotReachable
+    | 0,_ -> if eq_pair_subset (s1,s2) (s1',s2')
+             then `Reachable
+             else canyield (s1,s2) (s1',s2') (1, n)
     | 1,1 ->
+       (*let () = print_string "Here\n" in*)
       if yield_in_one_step nfa1 nfa2 (s1,s2) (s1',s2')
-      then `Reachable
+      then (*let () = print_string "yield1\n" in*) `Reachable
       else `NotReachable
     | _ ->
       let n_half = n / 2 in
@@ -309,29 +282,25 @@ let pspace_eq_accessible nfa1 nfa2 =
       let (interval1,interval2) =
 	match compare m n_half <= 0 with
 	| true ->
-	  let interval1 = (n_half (*m*),n_half) in   (* I know why I have this interval, it's because before calling on 2 intervals, we call on one, and if this one fails then we call on 2 but we don't need to call on the first half *)
-	  let interval2 = (0,n - n_half) in
+	  let interval1 = (m, n_half) in
+	  let interval2 = (0, n - n_half) in
 	  (interval1,interval2)
 	| false ->
-	  let interval1 = (n_half,n_half) in
-	  let interval2 = (m-n_half,n - n_half) in
+	  let interval1 = (n_half, n_half) in
+	  let interval2 = (m - n_half, n - n_half) in
 	  (interval1,interval2)
       in
 
       let () = if fst interval1 = 0 then assert false else () in
 
-      let enum_mid = enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') (Interval.between interval1) (Interval.between interval2) in
+      let enum_mid =
+        enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2')
+          (Interval.between interval1) (Interval.between interval2) in
       let rec iterate stream_s_s' =
 	(*let () = print_string "!!\n" in*)
 	match stream_s_s' with
 	| `Empty -> `NotReachable
 	| `Elm ((s_s',itv1,itv2),next) ->
-	  (*let () = Set.print (filt (fst s_s')); Set.print (filt (snd s_s')); print_newline() in*)
-	  (*let () = assert false in*)
-	  (*let () = print_string " ("; print_int m; print_string " "; print_int n; print_string ")";
-	    Interval.print_interval  itv1; Interval.print_interval itv2;
-	    Interval.print_interval (Interval.between interval1); Interval.print_interval (Interval.between interval2);
-	    print_newline () in *)
 	  let b =
 	    match canyield (s1,s2) s_s' (Interval.to_pair itv1) with
 	    | `NotReachable -> `NotReachable
@@ -340,13 +309,7 @@ let pspace_eq_accessible nfa1 nfa2 =
 	  | `NotReachable -> iterate (next ())
 	  | `Reachable -> `Reachable
       in
-
-      match compare m n_half < 0 with
-      | true -> (match canyield (s1,s2) (s1',s2') (m, n_half) with
-	| `Reachable -> `Reachable
-	| `NotReachable -> iterate enum_mid)
-	| false -> iterate enum_mid
-      (* iterate enum_mid *) in
+      iterate enum_mid in
 
   let rec reachable_are_accepting s_s' bound cnt_reached =
     (*let () = print_string "!"; print_set (fst s_s'); print_set (snd s_s'); print_newline() in*)
@@ -356,25 +319,23 @@ let pspace_eq_accessible nfa1 nfa2 =
       | Some p -> reachable_are_accepting p bound cnt_reached in
 
     match canyield (initstate1, initstate2) s_s' (0, bound) with
-    | `Reachable -> if same_acceptance nfa1 nfa2 s_s'
-                    then next_yield (cnt_reached+1)
-                    else None
+    | `Reachable ->
+       if same_acceptance nfa1 nfa2 s_s'
+       then next_yield (cnt_reached+1)
+       else None
     | `NotReachable -> next_yield cnt_reached
   in
 
   let rec iter_run n prev_cnt =
     (*let () = print_int n; flush_all () in*)
-    if n > bound
-    then true
-    else
-      let res_n = reachable_are_accepting start_pair n 0 in
-      match res_n with
-      | None -> false
-      | Some cnt_reached ->
-         let () = print_int cnt_reached; print_string "-"; flush_all () in
-	 if cnt_reached = prev_cnt
-         then true (* fixpoint reached *)
-         else iter_run (n+1) cnt_reached
+    let res_n = reachable_are_accepting start_pair n 0 in
+    match res_n with
+    | None -> false
+    | Some cnt_reached ->
+       let () = print_int cnt_reached; print_string "-"; flush_all () in
+       if cnt_reached = prev_cnt
+       then true (* fixpoint reached *)
+       else iter_run (n+1) cnt_reached
   in
 
   if same_acceptance nfa1 nfa2 (initstate1,initstate2)

@@ -57,7 +57,7 @@ let nb_of_states nfa =
 ;;
   
 module SubsetS = struct
-  
+
   let is_empty s = List.for_all (fun (q,b) -> b = false) s
   ;;
   
@@ -106,10 +106,12 @@ module SubsetS = struct
   let yield1step nfa1 nfa2 (s1,s2) (s1',s2') a =
     let s3 = trans_char nfa1 a (filt s1) in
     let s4 = trans_char nfa2 a (filt s2) in
-    (Set.set_adds s3 [], Set.set_adds s4 []) = (filt s1', filt s2')
+    (Set.set_adds s3 [], Set.set_adds s4 []) =
+      (Set.normalize_set (filt s1'), Set.normalize_set (filt s2'))
 
   let yield_in_one_step nfa1 nfa2 (s1,s2) (s1',s2') =
-    yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'a' || yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'b'
+    yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'a' ||
+      yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'b'
 
 end;;
 
