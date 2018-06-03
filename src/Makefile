@@ -19,11 +19,14 @@ test:
 	ocamlopt -c test_transitive_closure.ml
 	ocamlopt transitive_closure.cmx test_transitive_closure.cmx -o test_transitive_closure.out
 	ocamlopt -c variation3.ml
+	ocamlopt -c npspace_eq_memo.ml
+	ocamlopt -c test_correctness.ml
+	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx npspace_eq_memo.cmx test_correctness.cmx -o test_correctness.out
 	ocamlopt -c test.ml
 	ocamlopt utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx test.cmx -o test.out
 
 clean:
-	rm *.cmx *.cmi *.o
+	rm *~ *.cmx *.cmi *.o
 
 version:
 	mkdir SVARIATIONS_$(VERSION); cd SVARIATIONS_$(VERSION)
