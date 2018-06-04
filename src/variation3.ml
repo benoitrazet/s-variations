@@ -111,9 +111,9 @@ let enum_pair f1 initial_itv1 f2 initial_itv2 =
 ;;
 
 let eq_subset s s' =
-  let s1 = filt s in
-  let s1' = filt s' in
-  Set.inclusion_set s1 s1' && Set.inclusion_set s1' s1
+  let s1 = Set.normalize (filt s) in
+  let s1' = Set.normalize (filt s') in
+  Set.equal_set s1 s1'
 ;;
 
 let eq_pair_subset (s1,s2) (s1',s2') =
@@ -152,22 +152,21 @@ let accessible_between mat s itv =
   aux 0
 ;;
 
-let aut_to_mat_closure aut =
-  (*let (i,delta,f) = aut in*)
-  let q = set_of_states aut in
-  let size = List.fold_left (fun m q -> if q > m then q else m) 0 q in
+let nfa_to_mat_closure nfa =
+  let q = set_of_states nfa in
+  let size = Set.fold_left (fun m q -> if q > m then q else m) 0 q in
   (*let () = print_string "Size "; print_int size; print_newline () in*)
   let mat = Array.make_matrix (size+1) (size+1) IntervalIsSemi.zero in
   let () = List.iter (fun (q,trans) ->
     List.iter (fun (c,q') ->
-      mat.(q).(q') <- Interval.interval_d1) trans) aut.transitions in
+      mat.(q).(q') <- Interval.interval_d1) trans) nfa.transitions in
   let cmat = GraphInterval.closure_tab (Array.length mat, mat) in
   cmat
 ;;
 
 
 (* The commented code in this function is a cleanup from pspace_eq9 *)
-let enum_sat aut1 aut2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
+let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
   let f_s1 = filt s1 in
   let f_s2 = filt s2 in
   let f_s1' = filt s1' in
@@ -252,8 +251,8 @@ let pspace_eq_accessible nfa1 nfa2 =
   let initstate1 = initial_subset nfa1 in
   let initstate2 = initial_subset nfa2 in
 
-  let mat1 = aut_to_mat_closure nfa1 in
-  let mat2 = aut_to_mat_closure nfa2 in
+  let mat1 = nfa_to_mat_closure nfa1 in
+  let mat2 = nfa_to_mat_closure nfa2 in
 
   let (start_pair, next_pair) = iterator_pair_subset nfa1 nfa2 in
 
@@ -272,9 +271,8 @@ let pspace_eq_accessible nfa1 nfa2 =
              then `Reachable
              else canyield (s1,s2) (s1',s2') (1, n)
     | 1,1 ->
-       (*let () = print_string "Here\n" in*)
       if yield_in_one_step nfa1 nfa2 (s1,s2) (s1',s2')
-      then (*let () = print_string "yield1\n" in*) `Reachable
+      then `Reachable
       else `NotReachable
     | _ ->
       let n_half = n / 2 in

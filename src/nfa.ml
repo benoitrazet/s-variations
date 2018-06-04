@@ -14,14 +14,14 @@ type nfa =
 
 let trans_char nfa letter states =
   let candidate_trans =
-    List.flatten (List.map snd (List.filter (fun (q,tr) -> List.mem q states) nfa.transitions)) in
+    List.flatten (List.map snd (List.filter (fun (q,tr) -> Set.mem q states) nfa.transitions)) in
   let outputstates =
     List.map snd (List.filter (fun (b,q') -> b = letter) candidate_trans) in
-  Set.normalize_set outputstates
+  Set.normalize outputstates
 ;;
 
 let accept nfa s =
-  List.exists (fun q -> List.mem q nfa.acceptings) s
+  Set.exists (fun q -> List.mem q nfa.acceptings) s
 ;;
 
 let string_of_nfa nfa =
@@ -47,23 +47,29 @@ let set_of_states nfa =
     match l with
     | [] -> acc
     | (q,tr) :: rest ->
-       let acc' = Set.set_adds (List.map snd tr) (Set.set_add q acc) in
+       let acc' = Set.add_list (List.map snd tr) (Set.add q acc) in
        help rest acc' in
-  Set.set_adds nfa.acceptings (help nfa.transitions (Set.set_add nfa.initial []))
+  Set.add_list nfa.acceptings (help nfa.transitions (Set.add nfa.initial Set.empty_set))
 ;;
 
 let nb_of_states nfa =
   Set.size (set_of_states nfa)
 ;;
-  
+
 module SubsetS = struct
+
+  let rec set_to_list set =
+    match Set.next set with
+    | None -> []
+    | Some (e, n) -> e :: set_to_list n
+  ;;
 
   let is_empty s = List.for_all (fun (q,b) -> b = false) s
   ;;
-  
+
   let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
   ;;
-  
+
   let print_set s =
     print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
   ;;
@@ -76,7 +82,7 @@ module SubsetS = struct
        | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
        | Some s' -> Some ((q,b) :: s')
   ;;
-  
+
   let next (s,s') startq2 =
     match next_subset s' with
     | None -> (match next_subset s with
@@ -86,10 +92,10 @@ module SubsetS = struct
   ;;
 
   let start_subset nfa =
-    List.map (fun x -> (x, false)) (set_of_states nfa)
+    List.map (fun x -> (x, false)) (set_to_list (set_of_states nfa))
 
   let initial_subset nfa =
-    List.map (fun x-> (x, x = nfa.initial)) (set_of_states nfa)
+    List.map (fun x-> (x, x = nfa.initial)) (set_to_list (set_of_states nfa))
 
   let iterator_pair_subset nfa1 nfa2 =
     let startq1 = start_subset nfa1 in
@@ -104,10 +110,10 @@ module SubsetS = struct
     List.exists (fun (q,b) -> b && List.mem q nfa2.acceptings) s2
 
   let yield1step nfa1 nfa2 (s1,s2) (s1',s2') a =
-    let s3 = trans_char nfa1 a (filt s1) in
-    let s4 = trans_char nfa2 a (filt s2) in
-    (Set.set_adds s3 [], Set.set_adds s4 []) =
-      (Set.normalize_set (filt s1'), Set.normalize_set (filt s2'))
+    let s3 = trans_char nfa1 a (Set.normalize (filt s1)) in
+    let s4 = trans_char nfa2 a (Set.normalize (filt s2)) in
+    Set.equal_set s3 (Set.normalize (filt s1')) &&
+      Set.equal_set s4 (Set.normalize (filt s2'))
 
   let yield_in_one_step nfa1 nfa2 (s1,s2) (s1',s2') =
     yield1step nfa1 nfa2 (s1,s2) (s1',s2') 'a' ||
@@ -157,4 +163,3 @@ let generate_nfa n =
   }
   (*(*all states, non-accepting*)
     { initial =0; transitions = gen (List.rev states) []; acceptings = []} *)
-	
