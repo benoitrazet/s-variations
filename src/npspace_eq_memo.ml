@@ -18,13 +18,14 @@ let npspace_eq_memo nfa1 nfa2 =
 	  let s1' = trans_char nfa1 a s1 in
 	  let s2' = trans_char nfa2 a s2 in
 	  loop s1' s2' (add_to_memory (s1,s2) mem) in
-	(*non-deterministic guess, forall quantifier *)
+	(* non-deterministic guess, forall quantifier *)
 	(match aux 'a' mem with
 	 | Some mem1 -> aux 'b' mem1
 	 | None -> None)
       else None
   in
-  match loop [nfa1.initial] [nfa2.initial] empty_memory with
+  match loop (Set.singleton nfa1.initial)
+          (Set.singleton nfa2.initial) empty_memory with
   | Some l -> true
   | None -> false
 ;;

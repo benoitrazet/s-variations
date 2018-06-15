@@ -1,16 +1,8 @@
-type set = int list;;
+type elm = int;;
 
-let set_add elm (s: int list) =
-  let s' = elm::s in
-  let s'' = List.sort (fun x -> fun y -> x - y) s' in
-  let rec remove_dupl l = match l with
-    | [] -> []
-    | [x] -> [x]
-    | x :: y :: l -> if x = y then remove_dupl (y::l) else x :: remove_dupl (y::l) in
-  remove_dupl s''
-;;
+type set = elm list;;
 
-let set_add elm (s: int list) =
+let add elm (s: int list) =
   let rec help s =
     match s with
     | [] -> [elm]
@@ -19,10 +11,10 @@ let set_add elm (s: int list) =
   help s
 ;;
 
-let rec set_adds l s =
+let rec add_list l s =
   match l with
   | [] -> s
-  | x::xs -> set_adds xs (set_add x s)
+  | x::xs -> add_list xs (add x s)
 ;;
 (*
 let set_adds l (s: int list) =
@@ -38,28 +30,27 @@ let set_adds l (s: int list) =
   help ls s
 ;;
 *)
-let rec set_union s1 s2 =
+let rec union s1 s2 =
   match s1,s2 with
   | [],[] -> []
   | _,[] -> s1
   | [],s2 -> s2
   | x::xs,y::ys ->
     if x = y
-    then set_union s1 ys
+    then union s1 ys
     else if x < y
-         then x :: set_union xs s2
-         else y :: set_union s1 ys        
+         then x :: union xs s2
+         else y :: union s1 ys
 ;;
+
+let empty_set = [];;
 
 let is_empty s = s = [];;
 
-let singleton_set elm = [elm] ;;
+let singleton elm = [elm] ;;
 
-(*
-let normalize_set l = set_adds l [];;
-*)
-let normalize_set l =
-  let rec split l = 
+let normalize l =
+  let rec split l =
     match l with
     | [] -> [ l ]
     | [x] -> [ l ]
@@ -68,7 +59,7 @@ let normalize_set l =
     match ll with
     | [] -> []
     | [x] -> [x]
-    | l1 :: l2 :: lls -> (set_union l1 l2 :: merge2list lls) in
+    | l1 :: l2 :: lls -> (union l1 l2 :: merge2list lls) in
   let rec merge_all ll =
     match ll with
     | [] ->  assert false
@@ -77,26 +68,26 @@ let normalize_set l =
   merge_all (split l)
 ;;
 
-let rec intersection_set s1 s2 =
+let rec intersection s1 s2 =
   match s1 with
   | [] -> []
-  | x::xs -> if List.mem x s2 then x :: (intersection_set xs s2) else intersection_set xs s2
+  | x::xs -> if List.mem x s2 then x :: (intersection xs s2) else intersection xs s2
 ;;
 
-let rec difference_set s1 s2 =
+let rec difference s1 s2 =
   match s1 with
   | [] -> []
-  | x::xs -> if List.mem x s2 then difference_set xs s2 else x :: (difference_set xs s2)
+  | x::xs -> if List.mem x s2 then difference xs s2 else x :: (difference xs s2)
 ;;
 
-let rec inclusion_set s1 s2 =
+let rec inclusion s1 s2 =
   match s1 with
   | [] -> true
-  | x::xs -> if List.mem x s2 then inclusion_set xs s2 else false
+  | x::xs -> if List.mem x s2 then inclusion xs s2 else false
 ;;
 
 let equal_set s1 s2 =
-  inclusion_set s1 s2 && inclusion_set s2 s1
+  inclusion s1 s2 && inclusion s2 s1
 ;;
 
 let next s = match s with
@@ -104,7 +95,24 @@ let next s = match s with
   | x :: xs -> Some (x,xs)
 ;;
 
+let rec mem elm s =
+  match s with
+  | [] -> false
+  | x :: xs -> if x > elm then false
+               else if x = elm then true
+               else mem elm xs
+;;
+
+let rec exists f s = match s with
+  | [] -> false
+  | x :: xs -> if f x then true else exists f xs
+
+let rec fold_left f z s =
+  match s with
+  | [] -> z
+  | x :: xs -> fold_left f (f z x) xs
+;;
+
 let size s = List.length s;;
 
 let print s = print_string "{";List.iter (fun i-> print_int i;print_string " ") s; print_string "}";;
-

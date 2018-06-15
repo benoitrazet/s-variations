@@ -16,16 +16,16 @@ let npspace_eq nfa1 nfa2 =
     if i > max_steps
     then true
     else
-      if accept nfa1 s1 = accept nfa2 s2
+      if Nfa.accept nfa1 s1 = Nfa.accept nfa2 s2
       then
 	let branch c =
-	  let s1' = trans_char nfa1 c s1 in
-	  let s2' = trans_char nfa2 c s2 in
+          let s1' = trans_char nfa1 c s1 in
+          let s2' = trans_char nfa2 c s2 in
 	  loop (i+1) s1' s2' in
         (* non-deterministic branch, forall *)
 	branch 'a' && branch 'b'
       else false
   in
-  loop 0 (singleton_set nfa1.initial) (singleton_set nfa2.initial)
+  loop 0 (Set.singleton nfa1.initial) (Set.singleton nfa2.initial)
 ;;
 

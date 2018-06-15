@@ -10,6 +10,7 @@ all: test
 
 test:
 	ocamlopt -c utils.ml
+	ocamlopt -c set.mli
 	ocamlopt -c set.ml
 	ocamlopt -c nfa.ml
 	ocamlopt -c variation0_npspace.ml

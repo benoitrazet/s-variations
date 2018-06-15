@@ -38,4 +38,5 @@ let test_correctness algo n nb_tests =
 (*test_correctness npspace_eq 3 100;;
 test_correctness pspace_eq 3 100;;
 test_correctness pspace_eq_counting 4 100;; *)
-test_correctness pspace_eq_accessible 5 1000;;
+test_correctness pspace_eq_accessible 5 10000;;
+(*test_correctness npspace_eq_memo 70 1000;;*)
