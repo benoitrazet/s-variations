@@ -1,7 +1,7 @@
-- (2018-06-03) Need to clean up the interface for set and subsets. No
+- (2018-06-03) ~~Need to clean up the interface for set and subsets. No
   more exposition of the data-structure that can be used at a low
-  level in othe modules. That's clear after this subtle imission of
-  normalization of set in yield1 function.
+  level in othe modules. That's clear after this subtle omission of
+  normalization of set in yield1 function.~~ (2018-06-15)
 
 - (2018-06-02) In the savitch engine that count the number of
   solutions, remove the use of the bound (2^{n1+n2}) because the
