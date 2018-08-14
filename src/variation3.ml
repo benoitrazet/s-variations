@@ -94,7 +94,7 @@ and finalize2 itv vector_of_selected enum_may_be_selected choices =
 (* Enumerate the product of two enumerations as the enumeration of the
    product. Both enumerations are functions of an interval and the
    interval produced by the first enumeration is piped into the second
-   enumeration.  *)
+   enumeration. *)
 let enum_pair f1 initial_itv1 f2 initial_itv2 =
   let rec help str1 =
     match str1 with
@@ -120,38 +120,44 @@ let eq_pair_subset (s1,s2) (s1',s2') =
   eq_subset s1 s1' && eq_subset s2 s2'
 ;;
 
-
-(* TODO: document that *)
+(* computes the union interval that a list of states s can lead to state q' *)
+let get_itv_to_state mat s q' itv =
+  List.fold_left (fun t q ->
+      Interval.interval_union t (Interval.interval_intersection mat.(q).(q') itv))
+    Interval.interval_zero s
+;;
+  
+(* Given a matrix mat and an initial subset s and an arrival subset s'
+   and an itv, the function get_interval computes the interval that
+   can lead from s to s' conditioned by itv. *)
 let get_interval mat s s' itv =
-  let get_col_part1 q' =
-    List.fold_left (fun t q -> Interval.interval_union t (Interval.interval_intersection mat.(q).(q') itv)) Interval.interval_zero s in
+  let get_col_part1 q' = get_itv_to_state mat s q' itv in
   let get_all_cols_part1 = List.map get_col_part1 s' in
   let inter_all_cols = List.fold_left (fun res t -> Interval.interval_intersection t res) Interval.interval_all get_all_cols_part1 in
   let result_itv1 = Interval.interval_intersection inter_all_cols itv in
   result_itv1
 
+(* apply get_interval to the first pair of subsets and the second pair
+   of subsets. *)
 let get_both_intervals mat s s_mid s' itv1 itv2 =
   (get_interval mat s s_mid itv1, get_interval mat s_mid s' itv2)
 ;;
 
-(* TODO: document that *)
+(* Given a matrix mat and a list of states s, it computes the list of
+   states that are accessible from s given an interval itv. *)
 let accessible_between mat s itv =
   let size = Array.length mat in
   let rec aux i =
     if i >= size
     then []
-    else let itv1 =
-           List.fold_left (fun res q ->
-               Interval.interval_union
-                 res
-                 (Interval.interval_intersection mat.(q).(i) itv) )
-             Interval.interval_zero s in
+    else let itv1 = get_itv_to_state mat s i itv in
 	 if Interval.is_empty itv1
          then aux (i+1)
 	 else i :: aux(i+1) in
   aux 0
 ;;
 
+(* Computes the matrix of transitive closure of intervals for a given nfa. *)
 let nfa_to_mat_closure nfa =
   let q = set_of_states nfa in
   let size = Set.fold_left (fun m q -> if q > m then q else m) 0 q in
@@ -173,11 +179,9 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
   let f_s2' = filt s2' in
 
   let (subset1,subset2) =
-    match interval1 with
-    | _ ->
-      let subset1 = accessible_between mat1 f_s1 interval1 in
-      let subset2 = accessible_between mat2 f_s2 interval1 in
-      (subset1,subset2) in
+    let subset1 = accessible_between mat1 f_s1 interval1 in
+    let subset2 = accessible_between mat2 f_s2 interval1 in
+    (subset1,subset2) in
 
   (* For each states in s1', associate the states in subset1 that can yield to s1' *)
   let s1'_reachable_from = List.map (fun q' -> (q',
@@ -209,8 +213,10 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
       let (t2,t2') = get_both_intervals mat2 f_s2 f_s_mid2 f_s2' interval1 itv2 in
       let t_prev = Interval.interval_intersection t1 t2 in
       let t_post = Interval.interval_intersection t1' t2' in
-      let print_call () = print_string "EnumInt "; print_set s1; print_set s2; print_set s1'; print_set s2';
-	print_set s_mid1; print_set s_mid2; Interval.print_interval itv2; print_string " "; Interval.print_interval interval1; Interval.print_interval interval2; print_string " ";
+      let print_call () =
+        print_string "EnumInt "; print_set s1; print_set s2; print_set s1'; print_set s2';
+	print_set s_mid1; print_set s_mid2; Interval.print_interval itv2; print_string " ";
+        Interval.print_interval interval1; Interval.print_interval interval2; print_string " ";
 	Interval.print_interval t1; Interval.print_interval t2;
 	Interval.print_interval t1'; Interval.print_interval t2'; Interval.print_interval t_prev; Interval.print_interval t_post
       ; print_newline () in
@@ -227,13 +233,14 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
 	       `Elm (((s_mid1,s_mid2),t_prev,t_post), (fun () -> enum_interval (next())))
     ) in
 
+  (* this function adds (s1',s2') in the enumeration if it does not appear in the enumeration *)
   let add_if_not_in_enum f =
     let rec aux f b =
       match f with
-      | `Empty -> if not b then `Elm (((s1',s2'),Interval.interval_one), fun () -> `Empty) else `Empty
+      | `Empty -> if not b then `Elm (((s1',s2'), Interval.interval_one), fun () -> `Empty) else `Empty
       | `Elm (((s_mid1,s_mid2),itv2), next) ->
-	let b = eq_subset s_mid1 s1' && eq_subset s_mid2 s2' in
-	`Elm (((s_mid1,s_mid2),itv2), fun () -> aux (next()) b)
+	let b1 = eq_subset s_mid1 s1' && eq_subset s_mid2 s2' in
+	`Elm (((s_mid1,s_mid2),itv2), fun () -> aux (next()) (b || b1))
     in
 
 
