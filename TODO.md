@@ -1,3 +1,6 @@
+- (2018-08-07) create an interface for streams and enumerations. This
+  should provide cleaner evidence that algo is in PSPACE.
+
 - (2018-06-03) ~~Need to clean up the interface for set and subsets. No
   more exposition of the data-structure that can be used at a low
   level in othe modules. That's clear after this subtle omission of

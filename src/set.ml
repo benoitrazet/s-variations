@@ -16,20 +16,7 @@ let rec add_list l s =
   | [] -> s
   | x::xs -> add_list xs (add x s)
 ;;
-(*
-let set_adds l (s: int list) =
-  let ls = List.sort (fun x -> fun y -> x-y) l in
-  let rec help l s =
-    match l with
-    | [] -> s
-    | elm :: elms ->
-      match s with
-      | [] -> help elms [elm]
-      | x::xs -> if elm = x then help elms s else if elm < x then help elms (elm :: s) else x :: help l xs
-  in
-  help ls s
-;;
-*)
+
 let rec union s1 s2 =
   match s1,s2 with
   | [],[] -> []
