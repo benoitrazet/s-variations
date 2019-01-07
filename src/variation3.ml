@@ -5,8 +5,8 @@ open SubsetS;;
 open Transitive_closure;;
 
 
-(* The function sat_enum_subset enumerate subsets of
-   allstates not naively, such that each subset is able to generate all the states
+(* The function narrow_enum_subset enumerate subsets of allstates not
+   naively, such that each subset is able to generate all the states
    in [list.map fst tab]. The [tab] parameter is the association table
    such that if [(q,l)] is in [tab] then it means that every state in
    [l] can reach state [q].
@@ -14,70 +14,108 @@ open Transitive_closure;;
    The enumeration works by backtracking. It is worth noticing that
    there are similarities with this problem and #SAT which aims at
    counting the number of satisfiability assignments. I leave as
-   future work to further investigate the connection between the 2
-   problems.
-*)
+   future work to further investigate the connection between the two
+   problems. *)
+
+module NarrowEnum:
+sig
+  type table_yield_to = (int * (int * Interval.interval) list) list;;
+  val narrow_enum_subset: table_yield_to -> Interval.interval -> int list ->
+     ([> `Elm of
+            ((int * bool) list * Transitive_closure.Interval.interval) *
+            (unit -> 'a)
+        | `Empty ] as 'a);;
+end = struct
+  type table_yield_to = (int * (int * Interval.interval) list) list;;
+
+  let assoc_itv_in_trans q1 tr =
+    let rec aux accu tr =
+      match tr with
+      | [] -> None
+      | (q,itv) :: rest ->
+         if q1 = q
+         then Some (itv, List.rev_append accu rest)
+         else aux ((q, itv) :: accu) rest in
+    aux [] tr;;
+
+  let clean_tab_and_update_global_itv tr global_itv =
+    List.fold_left (fun (tr, global_itv) (q, lst, itv_q) ->
+	if lst = []
+	then (tr, Interval.interval_intersection itv_q global_itv)
+	else ((q, lst, itv_q) :: tr, global_itv))
+      ([], global_itv)
+      tr
+  ;;
+  let filter_selected_tab tab q1 global_itv =
+    let remove_q1_from_transitions_and_update =
+      List.map
+        (fun (q, lst, itv_q) ->
+          (match assoc_itv_in_trans q1 lst with
+	   | None -> (q, lst, itv_q)
+	   | Some (itv, lst') -> (q, lst', Interval.interval_union itv itv_q)))
+        tab
+    in
+    clean_tab_and_update_global_itv remove_q1_from_transitions_and_update global_itv
+  ;;
+  let remove_q1_from_transitions_no_update tab q1 =
+    List.map
+      (fun (q, lst, itv_q) ->
+        let lst' = List.filter (fun (r,_) -> not (r = q1)) lst in
+        (q, lst', itv_q))
+      tab
+  ;;
+  let filter_notselected_tab tab q1 =
+    let tab2 = remove_q1_from_transitions_no_update tab q1 in
+    clean_tab_and_update_global_itv tab2
+  ;;
 
 (* allstates is a constant parameter *)
-let rec smart_enum_subset (tab:(int * (int * Interval.interval) list * Interval.interval) list) global_itv (allstates: int list) =
-  sat_enum_subset tab global_itv [] [] allstates []
+let rec narrow_enum_subset (tab: table_yield_to) global_itv (allstates: int list) =
+  let init m = List.map (fun (q, lst) -> (q, lst, Interval.interval_zero)) m in
+  sat_enum_subset (init tab) global_itv [] [] allstates []
 
-and sat_enum_subset (tab:(int * (int * Interval.interval) list * Interval.interval) list)
-    global_itv selected notselected (allstates: int list) choices =
+and sat_enum_subset tab global_itv selected notselected (allstates: int list) choices =
   if Interval.is_empty global_itv
   then backtrack choices
   else
-  match tab with
-  | [] ->  finalize global_itv selected notselected allstates choices
-  | _ ->
-    let tab1 = List.map (fun (q,lst,itv) -> (q,lst,itv,List.length lst)) tab in
-    let orderedtab = List.sort
-      (fun (q,l,itv,score) (q',l',itv',score') -> score - score') tab1 in
-    let orderedtab = List.map (fun (x,y,z,t) -> (x,y,z)) orderedtab in
-    let (q,lst,_itv(*,score*)) = List.hd orderedtab in
-    let assoc_itv_in_trans q1 tr =
-      let rec aux accu tr =
-	match tr with
-	| [] -> None
-	| (q,itv) :: rest -> if q1 = q then Some (itv,List.rev_append accu rest) else aux ((q,itv)::accu) rest in
-      aux [] tr in
-
-    let clean_tab_and_update_global_itv tr =
-      List.fold_left (fun (tr,global_itv) (q,lst,itv_q) ->
-	if lst = []
-	then (tr,Interval.interval_intersection itv_q global_itv)
-	else ((q,lst,itv_q) :: tr,global_itv)) ([],global_itv) tr in
-    let filter_selected_tab q1 =
-      let remove_q1_from_transitions_and_update =
-	List.map (fun (q,lst,itv_q) -> (match assoc_itv_in_trans q1 lst with
-	| None -> (q,lst,itv_q)
-	| Some (itv, lst') -> (q,lst',Interval.interval_union itv itv_q)) ) orderedtab
-      in
-      clean_tab_and_update_global_itv remove_q1_from_transitions_and_update in
-    let remove_q1_from_transitions_no_update q1 =
-      List.map (fun (q,lst,itv_q) -> (q, List.filter (fun (r,_) -> not (r = q1)) lst, itv_q)) orderedtab
-      in
-    let filter_notselected_tab q1 =
-      let tab2 = remove_q1_from_transitions_no_update q1 in
-      clean_tab_and_update_global_itv tab2  in
-    (match List.length ((fun (x,y,z) -> y) (List.hd orderedtab)) with
-    | 0 -> let (new_tab, new_global_itv) = clean_tab_and_update_global_itv orderedtab in
-	   sat_enum_subset new_tab new_global_itv selected notselected allstates choices
+    match tab with
+    | [] ->  finalize global_itv selected notselected allstates choices
     | _ ->
-      let (state_selected, _itv) = List.hd lst in
-      let (tab_selected, global_itv_selected) = filter_selected_tab state_selected in
-      let (tab_notselected, global_itv_notselected) = filter_notselected_tab state_selected in
-      let newchoices = (tab_notselected, global_itv_notselected, selected, state_selected :: notselected,allstates):: choices in
-       sat_enum_subset tab_selected global_itv_selected (state_selected :: selected) notselected allstates newchoices)
+      let tab1 = List.map (fun (q, lst, itv) -> (q, lst, itv, List.length lst)) tab in
+      let orderedtab =
+        List.sort
+          (fun (q, l, itv, score) (q', l', itv', score') -> score - score') tab1 in
+      let orderedtab = List.map (fun (x, y, z, t) -> (x, y, z)) orderedtab in
+      let (q, lst, _itv(*,score*)) = List.hd orderedtab in
+      (match List.length ((fun (x, y, z) -> y) (List.hd orderedtab)) with
+       | 0 -> let (new_tab, new_global_itv) =
+                clean_tab_and_update_global_itv orderedtab global_itv in
+	      sat_enum_subset new_tab new_global_itv selected notselected allstates choices
+       | _ ->
+          let (state_selected, _itv) = List.hd lst in
+          let (tab_selected, global_itv_selected) =
+            filter_selected_tab orderedtab state_selected global_itv in
+          let (tab_notselected, global_itv_notselected) =
+            filter_notselected_tab orderedtab state_selected global_itv in
+          let newchoices =
+            (tab_notselected,
+             global_itv_notselected,
+             selected,
+             state_selected :: notselected,
+             allstates) :: choices in
+          sat_enum_subset tab_selected global_itv_selected (state_selected :: selected)
+            notselected allstates newchoices)
 and backtrack choices =
   match choices with
   | [] -> `Empty
   | (tab, global_itv, selected, notselected,allstates) :: other ->
     sat_enum_subset tab global_itv selected notselected allstates other
 and finalize itv selected notselected allstates choices =
-  let vector_of_selected = List.map (fun q -> (q,true)) selected in
-  let may_be_selected = List.filter (fun q -> not (List.mem q selected) && not (List.mem q notselected)) allstates in
-  let enum_may_be_selected = Some (List.map (fun q -> (q,false)) may_be_selected) in
+  let vector_of_selected = List.map (fun q -> (q, true)) selected in
+  let may_be_selected =
+    List.filter
+      (fun q -> not (List.mem q selected) && not (List.mem q notselected)) allstates in
+  let enum_may_be_selected = Some (List.map (fun q -> (q, false)) may_be_selected) in
   (*let () = print_string "Size of Selected: "; print_int (List.length vector_of_selected);
     print_string " vs "; print_int (List.length allstates); print_newline () in*)
   finalize2 itv vector_of_selected enum_may_be_selected choices
@@ -85,11 +123,10 @@ and finalize2 itv vector_of_selected enum_may_be_selected choices =
   match enum_may_be_selected with
   | None -> backtrack choices
   | Some may_be_selected ->
-    `Elm (
-      (vector_of_selected@may_be_selected,itv),
-      fun () ->
-        finalize2 itv vector_of_selected (next_subset may_be_selected) choices)
+     let cont = fun () -> finalize2 itv vector_of_selected (next_subset may_be_selected) choices in
+    `Elm ((vector_of_selected@may_be_selected, itv), cont)
 ;;
+end;; (* NarrowEnum *)
 
 (* Enumerate the product of two enumerations as the enumeration of the
    product. Both enumerations are functions of an interval and the
@@ -126,14 +163,17 @@ let get_itv_to_state mat s q' itv =
       Interval.interval_union t (Interval.interval_intersection mat.(q).(q') itv))
     Interval.interval_zero s
 ;;
-  
+
 (* Given a matrix mat and an initial subset s and an arrival subset s'
    and an itv, the function get_interval computes the interval that
    can lead from s to s' conditioned by itv. *)
 let get_interval mat s s' itv =
   let get_col_part1 q' = get_itv_to_state mat s q' itv in
   let get_all_cols_part1 = List.map get_col_part1 s' in
-  let inter_all_cols = List.fold_left (fun res t -> Interval.interval_intersection t res) Interval.interval_all get_all_cols_part1 in
+  let inter_all_cols =
+    List.fold_left
+      (fun res t -> Interval.interval_intersection t res) Interval.interval_all
+      get_all_cols_part1 in
   let result_itv1 = Interval.interval_intersection inter_all_cols itv in
   result_itv1
 
@@ -178,10 +218,8 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
   let f_s1' = filt s1' in
   let f_s2' = filt s2' in
 
-  let (subset1,subset2) =
-    let subset1 = accessible_between mat1 f_s1 interval1 in
-    let subset2 = accessible_between mat2 f_s2 interval1 in
-    (subset1,subset2) in
+  let subset1 = accessible_between mat1 f_s1 interval1 in
+  let subset2 = accessible_between mat2 f_s2 interval1 in
 
   (* For each states in s1', associate the states in subset1 that can yield to s1' *)
   let s1'_reachable_from = List.map (fun q' -> (q',
@@ -197,9 +235,9 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
       if Interval.is_empty itv
       then tr
       else (q,itv) :: tr) [] subset2)) f_s2' in
-  let init m = List.map (fun (q,lst) -> (q,lst,Interval.interval_zero)) m in
-  let enum1 itv = smart_enum_subset (init s1'_reachable_from) itv subset1 in
-  let enum2 itv = smart_enum_subset (init s2'_reachable_from) itv subset2 in
+
+  let enum1 itv = NarrowEnum.narrow_enum_subset s1'_reachable_from itv subset1 in
+  let enum2 itv = NarrowEnum.narrow_enum_subset s2'_reachable_from itv subset2 in
 
   let enum_1_2 = enum_pair enum1 interval2 enum2 interval2 in
 
@@ -218,14 +256,15 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
 	print_set s_mid1; print_set s_mid2; Interval.print_interval itv2; print_string " ";
         Interval.print_interval interval1; Interval.print_interval interval2; print_string " ";
 	Interval.print_interval t1; Interval.print_interval t2;
-	Interval.print_interval t1'; Interval.print_interval t2'; Interval.print_interval t_prev; Interval.print_interval t_post
-      ; print_newline () in
+	Interval.print_interval t1'; Interval.print_interval t2'; Interval.print_interval t_prev;
+        Interval.print_interval t_post; print_newline () in
       (*let () =  print_call () in*)
       if Interval.is_empty t_prev
       then enum_interval (next ())
       else
 	if Interval.is_starting_zero interval2 && eq_subset s_mid1 s1' && eq_subset s_mid2 s2'
-	then `Elm (((s_mid1,s_mid2),t_prev, Interval.interval_union Interval.interval_one t_post), (fun () -> enum_interval (next())))
+	then `Elm (((s_mid1,s_mid2),t_prev, Interval.interval_union Interval.interval_one t_post),
+                   (fun () -> enum_interval (next())))
 	else
 	  if Interval.is_empty t_post
 	  then enum_interval (next ())
@@ -237,7 +276,8 @@ let enum_sat nfa1 nfa2 mat1 mat2 (s1,s2) (s1',s2') interval1 interval2 =
   let add_if_not_in_enum f =
     let rec aux f b =
       match f with
-      | `Empty -> if not b then `Elm (((s1',s2'), Interval.interval_one), fun () -> `Empty) else `Empty
+      | `Empty -> if not b then `Elm (((s1',s2'), Interval.interval_one), fun () -> `Empty)
+                  else `Empty
       | `Elm (((s_mid1,s_mid2),itv2), next) ->
 	let b1 = eq_subset s_mid1 s1' && eq_subset s_mid2 s2' in
 	`Elm (((s_mid1,s_mid2),itv2), fun () -> aux (next()) (b || b1))
@@ -266,8 +306,10 @@ let pspace_eq_accessible nfa1 nfa2 =
   (* in this context canyield means it finds a string that has not the
      same acceptance for both nfas. *)
   let rec canyield (s1,s2) (s1',s2') (m, n) =
-    let print_call () = print_string "CY "; print_set s1; print_set s2; print_set s1'; print_set s2';
-      print_string " ("; print_int m; print_string " "; print_int n; print_string ")"; print_newline () in
+    let print_call () =
+      print_string "CY "; print_set s1; print_set s2; print_set s1'; print_set s2';
+      print_string " ("; print_int m; print_string " "; print_int n; print_string ")";
+      print_newline () in
     (*let () =  print_call () in*)
 
     match m,n with
