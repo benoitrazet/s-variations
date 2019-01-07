@@ -3,12 +3,32 @@ Savitch Variations
 
 This project is about variations around the central theme of Savitch's Theorem.
 
-Variation 0 -- Non-deterministic Polynomial Space algorithm
+Savitch's Theorem shows that any problem that can be solved with a
+non-deterministic machine in space $S(n)$, where $n$ is the size of
+the input, can also be solved with a deterministic machine in space
+$S(n)^2$, in other words $NSPACE(S(n)) \subseteq DSPACE(S(n)^2)$; a
+corollary of this result for polynomial space algorithms is the
+equivalence $PSPACE = NPSPACE$. This is the basis to the claim that
+non-determinism does not extend the power of machines running with
+space restrictions. While that may be the case for the large class of
+polynomial space problems, it seems less clear for finer classes like
+$NSPACE(n)$, which is the class of problems that can be solved with a
+non-deterministic machine in linear space. Let us recall that the
+1st LBA conjecture is still open, $NSPACE(n) vs DSPACE(n)$, and that
+the second LBA conjecture has been solved establishing the
+equivalence $NPSPACE(n) = coNSPACE(n)$.
+
+We propose to study the Savitch's Theorem applied to one of the most
+representative problem for $coNSPACE(n)$ problem, which is the Equivalence
+of NFAs.
+
+Variation 0 -- Non-deterministic Polynomial Space Algorithm
 -----------------------------------------------------------
 
 This variation shows a non-deterministic polynomial space algorithm to
-decide the equivalence of two NFAs.  This variation is numbered zero
-because it is the root of the next variations.
+decide the equivalence of two NFAs and simulates it with a naive
+deterministic algorithm. This variation is numbered zero because it
+is the root of the next variations.
 
 
 Remark: This first variation demonstrates an interesting behavior
@@ -38,24 +58,27 @@ Immerman-Szelepcsényi Theorem which establishes the equivalence
 between NSPACE(S(n)) and co-NSPACE(S(n)).
 
 
-Variation 3 -- Smart guessing the middle configurations
--------------------------------------------------------
+Variation 3 -- Narrowing and Ordering Enumerations
+--------------------------------------------------
 
-This variation improves the running time by upgrading the method of
-enumeration of the middle configurations. In the previous variations,
-the enumeration of the middle configurations is completely naive and
-enumerates all the possible configurations (the best case is the same
-as the worst case). To illustrate how impractical it is, consider some
-states that is are not reachable from a starting configuration, then
-all the combinations of these states would be generated with no chance
-of success. In this variation we developed a technique to enumerate
-only the middle configurations that have a chance to be
-successful. The main idea is to consider the matrix associated with
+This variation improves the running time by refining the enumeration
+of the middle configurations. In the previous variations, the
+enumeration of the middle configurations is completely naive and
+enumerates all the possible configurations -- the best case meets the
+worst case. To illustrate how impractical it is, consider some states
+that is are not reachable from a starting configuration, then all the
+combinations of these states would be enumerated despite the
+impossibility to reach these configurations.
+
+In this variation we developed a technique to narrow the enumeration
+of the middle configurations based on the specific inputs and also
+reorder the enumeration with an heuristics to maximize the
+reachability. The main idea is to consider the matrix associated with
 each NFAs where the element a_{i,j} is an interval [m,n] indicating
 that it is possible to go from state i to state j with a string of
-length least m and at most n.
+length at least m and at most n.
 
-The smart enumeration remains in the polynomial space complexity and
+This enumeration remains in polynomial space complexity and
 therefore the whole algorithm remains in DSPACE(n^2).
 
 

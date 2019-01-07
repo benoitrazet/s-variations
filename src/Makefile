@@ -1,6 +1,8 @@
 VERSION=0.1
 
-OCAMLC=ocamloptp -P a
+# OCAMLC=ocamloptp -P a
+OCAMLC=ocamlopt
+
 
 SOURCES=utils.ml set.ml nfa.ml variation0_npspace.ml variation1_savitch_theorem.ml test.ml
 

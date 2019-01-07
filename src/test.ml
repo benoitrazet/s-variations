@@ -29,10 +29,18 @@ let test_equiv_nfa algo n nb_tests=
   iterate 2
 ;;
 
+print_string "\nTest Variation 0\n";;
 test_equiv_nfa npspace_eq 3 10;;
 print_newline ();;
+
+print_string "\nTest Variation 1\n";;
 test_equiv_nfa pspace_eq 3 100;;
 print_newline ();;
+
+print_string "\nTest Variation 2\n";;
 test_equiv_nfa pspace_eq_counting 4 1000;;
 print_newline ();;
-test_equiv_nfa pspace_eq_accessible 5 100;;
+
+print_string "\nTest Variation 3\n";;
+test_equiv_nfa pspace_eq_accessible 5 1000;;
+print_newline ();;
