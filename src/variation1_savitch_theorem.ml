@@ -19,7 +19,11 @@ let pspace_eq nfa1 nfa2 =
   (* in this context canyield means it finds a string that has not the
      same acceptance for both nfas. *)
   let rec canyield (s1,s2) (s1',s2') n1 n2 =
-    let print_call () = if n2 - n1 > 2 then (print_set s1; print_set s2; print_set s1'; print_set s2'; print_int n1; print_string " "; print_int n2; print_newline ()) else () in
+    let print_call () =
+      if n2 - n1 > 2
+      then (print_subsets s1; print_subsets s2; print_subsets s1'; print_subsets s2';
+            print_int n1; print_string " "; print_int n2; print_newline ())
+      else () in
     (*let () =  print_call () in*)
     if n2 - n1 <= 1
     then
@@ -48,7 +52,7 @@ let pspace_eq nfa1 nfa2 =
       iterate start_pair in
 
   let rec reachable_are_accepting s_s' =
-    (*let () = print_string "!"; print_set (fst s_s'); print_set (snd s_s'); print_newline() in*)
+    (*let () = print_string "!"; print_subsets (fst s_s'); print_subsets (snd s_s'); print_newline() in*)
     let next_yield () =
       match next_pair s_s' with
       | None -> true
@@ -56,7 +60,7 @@ let pspace_eq nfa1 nfa2 =
     if same_acceptance nfa1 nfa2 s_s'
     then next_yield ()
     else
-      (*let () = print_string "?"; print_set (fst s_s'); print_set (snd s_s'); print_newline() in*)
+      (*let () = print_string "?"; print_subsets (fst s_s'); print_subsets (snd s_s'); print_newline() in*)
       match canyield (initstate1, initstate2) s_s' 0 bound with
       | `Reachable -> false
       | `NotReachable -> next_yield ()
