@@ -58,6 +58,8 @@ let nb_of_states nfa =
 
 module SubsetS = struct
 
+  type t = (Set.elm * bool) list;;
+
   let rec set_to_list set =
     match Set.next set with
     | None -> []
@@ -70,8 +72,12 @@ module SubsetS = struct
   let filt s = List.map fst (List.filter (fun (x,b) -> b) s)
   ;;
 
-  let print_set s =
-    print_string "{"; (List.iter (fun (q,b) -> if b then (print_int q; print_string ",") else ()) s); print_string "}"
+  let print_subsets s =
+    print_string "{";
+    (List.iter (fun (q,b) ->
+         if b then (print_int q; print_string ",") else ()) s
+    );
+    print_string "}"
   ;;
 
   let rec next_subset s =
@@ -79,7 +85,8 @@ module SubsetS = struct
     | [] -> None
     | (q,b) :: xs ->
        match next_subset xs with
-       | None -> if b then None else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
+       | None -> if b then None
+                 else Some ((q,true) :: List.map (fun (x,_) -> (x,false)) xs)
        | Some s' -> Some ((q,b) :: s')
   ;;
 
@@ -150,7 +157,7 @@ let generate_nfa n =
       let trans_b = gen_trans fanout2 'b' in
       let transab = trans_a@trans_b in
       (*let states = List.map snd trans in
-	let states' = List.filter (fun q' -> not (q = q') && not (List.mem q' already_explored)) states in*)
+        let states' = List.filter (fun q' -> not (q = q') && not (List.mem q' already_explored)) states in*)
       gen qs ((q,transab) :: trans) in
   let rec accepting q =
     if q < n

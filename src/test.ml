@@ -19,7 +19,7 @@ let test_equiv_nfa algo n nb_tests=
                    aux (i+1) n size
   in
   let rec iterate i =
-    if i >= n
+    if i > n
     then ()
     else
       let () = print_string "\nSize "; print_int i; print_newline () in
@@ -30,17 +30,17 @@ let test_equiv_nfa algo n nb_tests=
 ;;
 
 print_string "\nTest Variation 0\n";;
-test_equiv_nfa npspace_eq 3 10;;
+test_equiv_nfa npspace_eq 2 10;;
 print_newline ();;
 
 print_string "\nTest Variation 1\n";;
-test_equiv_nfa pspace_eq 3 100;;
+test_equiv_nfa pspace_eq 2 100;;
 print_newline ();;
 
 print_string "\nTest Variation 2\n";;
-test_equiv_nfa pspace_eq_counting 4 1000;;
+test_equiv_nfa pspace_eq_counting 3 1000;;
 print_newline ();;
 
 print_string "\nTest Variation 3\n";;
-test_equiv_nfa pspace_eq_accessible 5 1000;;
+test_equiv_nfa pspace_eq_accessible 4 1000;;
 print_newline ();;

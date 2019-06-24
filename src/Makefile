@@ -4,7 +4,7 @@ VERSION=0.1
 OCAMLC=ocamlopt
 
 
-SOURCES=utils.ml set.ml nfa.ml variation0_npspace.ml variation1_savitch_theorem.ml test.ml
+SOURCES=utils.ml logging.ml set.ml nfa.ml variation0_npspace.ml variation1_savitch_theorem.ml test.ml
 
 EXECUTABLES=test.out
 
@@ -14,9 +14,13 @@ all: test
 
 test:
 	$(OCAMLC) -c utils.ml
+	$(OCAMLC) -c logging.ml
 	$(OCAMLC) -c set.mli
 	$(OCAMLC) -c set.ml
 	$(OCAMLC) -c nfa.ml
+	$(OCAMLC) -c stream.mli
+	$(OCAMLC) -c stream.ml
+	$(OCAMLC) -c engine.ml
 	$(OCAMLC) -c variation0_npspace.ml
 	$(OCAMLC) -c variation1_savitch_theorem.ml
 	$(OCAMLC) -c variation2_counting.ml
@@ -26,12 +30,12 @@ test:
 	$(OCAMLC) -c variation3.ml
 	$(OCAMLC) -c npspace_eq_memo.ml
 	$(OCAMLC) -c test_correctness.ml
-	$(OCAMLC) utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx npspace_eq_memo.cmx test_correctness.cmx -o test_correctness.out
+	$(OCAMLC) utils.cmx logging.cmx set.cmx nfa.cmx variation0_npspace.cmx stream.cmx engine.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx npspace_eq_memo.cmx test_correctness.cmx -o test_correctness.out
 	$(OCAMLC) -c test.ml
-	$(OCAMLC) utils.cmx set.cmx nfa.cmx variation0_npspace.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx test.cmx -o test.out
+	$(OCAMLC) utils.cmx logging.cmx set.cmx nfa.cmx variation0_npspace.cmx stream.cmx engine.cmx variation1_savitch_theorem.cmx variation2_counting.cmx transitive_closure.cmx variation3.cmx test.cmx -o test.out
 
 clean:
-	rm *~ *.cmx *.cmi *.o
+	rm *~ *.cmx *.cmi *.cmo *.o
 
 version:
 	mkdir SVARIATIONS_$(VERSION); cd SVARIATIONS_$(VERSION)
