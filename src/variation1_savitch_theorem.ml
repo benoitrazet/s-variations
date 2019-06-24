@@ -1,4 +1,5 @@
 open Utils;;
+open Logging;;
 open Set;;
 open Nfa;;
 open SubsetS;;
