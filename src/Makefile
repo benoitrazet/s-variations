@@ -17,6 +17,8 @@ test:
 	$(OCAMLC) -c set.mli
 	$(OCAMLC) -c set.ml
 	$(OCAMLC) -c nfa.ml
+	$(OCAMLC) -c stream.mli
+	$(OCAMLC) -c stream.ml
 	$(OCAMLC) -c variation0_npspace.ml
 	$(OCAMLC) -c variation1_savitch_theorem.ml
 	$(OCAMLC) -c variation2_counting.ml
