@@ -30,11 +30,14 @@ let rec union s1 s2 =
          else y :: union s1 ys
 ;;
 
-let empty_set = [];;
+let empty_set = []
+;;
 
-let is_empty s = s = [];;
+let is_empty s = s = []
+;;
 
-let singleton elm = [elm] ;;
+let singleton elm = [elm]
+;;
 
 let normalize l =
   let rec split l =
@@ -100,6 +103,11 @@ let rec fold_left f z s =
   | x :: xs -> fold_left f (f z x) xs
 ;;
 
-let size s = List.length s;;
+let size s = List.length s
+;;
 
-let print s = print_string "{";List.iter (fun i-> print_int i;print_string " ") s; print_string "}";;
+let print s =
+  print_string "{";
+  List.iter (fun i -> print_int i; print_string " ") s;
+  print_string "}"
+;;
